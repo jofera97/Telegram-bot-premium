@@ -18,6 +18,7 @@ TOKEN = "7776890109:AAGULnL1cUiDKLikBTSduM7BcAQqAV12mfc"
 PIX_CHAVE = "00020126360014br.gov.bcb.pix0114+5542991376372520400005303986540514.995802BR5910Joao Alves6009Sao Paulo62230519daqr2789155863177436304203B"
 CANAL_ID = -1002432070371
 ADMIN_ID = 357026423
+VIDEO_ID = "BAACAgEAAxkBAAEaY_9peBWHLj03SozqzKiU7Vk2WMngHwAC1wUAAvobwEc6uAQNHhIvPTgE"
 
 conn = sqlite3.connect("db.sqlite3", check_same_thread=False)
 cur = conn.cursor()
@@ -50,13 +51,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def escolher_plano(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    plano = update.callback_query.data
+    query = update.callback_query
+    await query.answer()
+
+    plano = query.data
     context.user_data["plano"] = plano
-    await update.callback_query.message.reply_text(
-        f"Plano {plano.upper()}\n\n"
-        f"Pix: {PIX_CHAVE}\n\n"
-        "Após pagar, envie o comprovante aqui."
+
+    texto = (
+        f"✨ *Plano {plano.upper()}*\n\n"
+        "💰 *Pagamento via Pix*\n"
+        f"`{PIX_CHAVE}`\n\n"
+        "📸 Envie o comprovante aqui após o pagamento."
     )
+
+    await query.message.reply_text(texto, parse_mode="Markdown")
 
 async def comprovante(update: Update, context: ContextTypes.DEFAULT_TYPE):
     plano = context.user_data.get("plano")
@@ -100,7 +108,7 @@ async def aprovar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
-app.add_handler(CallbackQueryHandler(escolher_plano))
+app.add_handler(CallbackQueryHandler(escolher_plano, pattern="^(mensal|trimestral)$"))
 app.add_handler(MessageHandler(filters.PHOTO | filters.Document.ALL, comprovante))
 app.add_handler(MessageHandler(filters.Regex("^/aprovar_"), aprovar))
 app.run_polling()
