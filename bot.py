@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 
 TOKEN = "7776890109:AAGULnL1cUiDKLikBTSduM7BcAQqAV12mfc"
 PIX_MENSAL = "00020126360014br.gov.bcb.pix0114+5542991376372520400005303986540514.995802BR5910Joao Alves6009Sao Paulo62230519daqr2789155863177436304203B"
-PIX_TRIMESTAL = "00020126580014br.gov.bcb.pix013687f579d7-4382-435a-aae0-eced225a9d36520400005303986540529.905802BR5910Joao Alves6009Sao Paulo62230519daqr27891558615494763040A04"
+PIX_TRIMESTRAL = "00020126580014br.gov.bcb.pix013687f579d7-4382-435a-aae0-eced225a9d36520400005303986540529.905802BR5910Joao Alves6009Sao Paulo62230519daqr27891558615494763040A04"
 CANAL_ID = -1002432070371
 ADMIN_ID = 357026423
 VIDEO_ID = "BAACAgEAAxkBAAEaY_9peBWHLj03SozqzKiU7Vk2WMngHwAC1wUAAvobwEc6uAQNHhIvPTgE"
@@ -60,11 +60,11 @@ async def escolher_plano(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if plano == "mensal":
         pix = PIX_MENSAL
-        valor = "R$ XX,XX"
+        valor = "R$ 14,99"
         periodo = "30 dias"
     else:
         pix = PIX_TRIMESTRAL
-        valor = "R$ YY,YY"
+        valor = "R$ 29,90"
         periodo = "90 dias"
 
     texto = (
