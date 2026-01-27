@@ -32,11 +32,20 @@ conn.commit()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     teclado = [
-        [InlineKeyboardButton("Mensal", callback_data="mensal")],
-        [InlineKeyboardButton("Trimestral", callback_data="trimestral")]
+        [InlineKeyboardButton("🔥 Mensal", callback_data="mensal")],
+        [InlineKeyboardButton("💎 Trimestral", callback_data="trimestral")]
     ]
-    await update.message.reply_text(
-        "Bem-vindo ao acesso premium.\n\nEscolha um plano:",
+
+    await context.bot.send_video(
+        chat_id=update.effective_chat.id,
+        video=VIDEO_ID,
+        caption=(
+            "🔥 *Bem-vindo!* 🔥\n\n"
+            "Tenha acesso agora a *milhares de conteúdos selecionados*,\n"
+            "que você *não encontra na web*.\n\n"
+            "*Escolha seu plano abaixo:* 👇"
+        ),
+        parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup(teclado)
     )
 
