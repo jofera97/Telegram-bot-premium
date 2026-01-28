@@ -17,10 +17,12 @@ from datetime import datetime, timedelta
 TOKEN = "7776890109:AAGULnL1cUiDKLikBTSduM7BcAQqAV12mfc"
 PIX_MENSAL = "00020126360014br.gov.bcb.pix0114+5542991376372520400005303986540514.995802BR5910Joao Alves6009Sao Paulo62230519daqr2789155863177436304203B"
 PIX_TRIMESTRAL = "00020126580014br.gov.bcb.pix013687f579d7-4382-435a-aae0-eced225a9d36520400005303986540529.905802BR5910Joao Alves6009Sao Paulo62230519daqr27891558615494763040A04"
+
 CANAL_ID = -1002432070371
 ADMIN_ID = 357026423
 VIDEO_ID = "BAACAgEAAxkBAAEaY_9peBWHLj03SozqzKiU7Vk2WMngHwAC1wUAAvobwEc6uAQNHhIvPTgE"
 
+# Banco de dados
 conn = sqlite3.connect("db.sqlite3", check_same_thread=False)
 cur = conn.cursor()
 cur.execute("""
@@ -31,6 +33,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 )
 """)
 conn.commit()
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     teclado = [
@@ -50,6 +53,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup(teclado)
     )
+
 
 async def escolher_plano(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -78,49 +82,57 @@ async def escolher_plano(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.message.reply_text(texto, parse_mode="Markdown")
 
+
 async def comprovante(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    plano = context.user_data.get("plano")
     user = update.message.from_user
+    plano = context.user_data.get("plano")
 
-    await context.bot.send_message(
-        ADMIN_ID,
-        f"Pagamento pendente:\n"
-        f"Usuário: @{user.username}\n"
-        f"Plano: {plano}\n\n"
-        f"/aprovar_{user.id}"
-    )
-
-    await update.message.reply_text("Comprovante recebido. Aguarde confirmação.")
-
-async def aprovar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.id != ADMIN_ID:
+    if not plano:
+        await update.message.reply_text(
+            "❌ Não identifiquei seu plano.\nUse /start e escolha novamente."
+        )
         return
 
-    user_id = int(update.message.text.split("_")[1])
-    dias = 30
-
+    # Define validade conforme plano
+    dias = 30 if plano == "mensal" else 90
     expira = datetime.now() + timedelta(days=dias)
 
+    # Salva no banco
     cur.execute(
         "INSERT INTO usuarios VALUES (?, ?, ?)",
-        (user_id, "ativo", expira.isoformat())
+        (user.id, plano, expira.isoformat())
     )
     conn.commit()
 
+    # Cria link único do canal
     link = await context.bot.create_chat_invite_link(
-        CANAL_ID,
+        chat_id=CANAL_ID,
         member_limit=1,
         expire_date=int((datetime.now() + timedelta(minutes=10)).timestamp())
     )
 
-    await context.bot.send_message(
-        user_id,
-        f"Pagamento confirmado.\n\nAcesse o canal:\n{link.invite_link}"
+    # Envia link ao usuário
+    await update.message.reply_text(
+        "✅ *Pagamento recebido!*\n\n"
+        "🔐 Acesse o canal privado pelo link abaixo:\n"
+        f"{link.invite_link}\n\n"
+        "⏳ *O link expira em 10 minutos*.",
+        parse_mode="Markdown"
     )
+
+    # Notifica admin
+    await context.bot.send_message(
+        ADMIN_ID,
+        f"Novo acesso liberado:\n"
+        f"Usuário: @{user.username}\n"
+        f"ID: {user.id}\n"
+        f"Plano: {plano}"
+    )
+
 
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(escolher_plano, pattern="^(mensal|trimestral)$"))
 app.add_handler(MessageHandler(filters.PHOTO | filters.Document.ALL, comprovante))
-app.add_handler(MessageHandler(filters.Regex("^/aprovar_"), aprovar))
+
 app.run_polling()
